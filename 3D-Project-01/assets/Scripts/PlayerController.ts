@@ -1,4 +1,4 @@
-import { _decorator, Component, Vec3, input, Input, EventMouse, Animation, SkeletalAnimation } from 'cc';
+import { _decorator, Component, Vec3, input, Input, EventMouse, Animation, SkeletalAnimation, AudioSource, AudioClip } from 'cc';
 const { ccclass, property } = _decorator;
 
 @ccclass("PlayerController")
@@ -8,6 +8,9 @@ export class PlayerController extends Component {
     public BodyAnim: Animation|null = null;
     @property({type: SkeletalAnimation})
     public CocosAnim: SkeletalAnimation|null = null;
+    // 跳跃音效资源
+    @property({type: AudioClip})
+    public jumpAudio: AudioClip|null = null;
 
     // for fake tween
     private _startJump: boolean = false;
@@ -41,7 +44,6 @@ export class PlayerController extends Component {
         } else if (event.getButton() === 2) {
             this.jumpByStep(2);
         }
-
     }
 
     jumpByStep(step: number) {
@@ -56,17 +58,17 @@ export class PlayerController extends Component {
         Vec3.add(this._targetPos, this._curPos, new Vec3(this._jumpStep, 0, 0));
 
         if (this.CocosAnim) {
-            this.CocosAnim.getState('cocos_anim_jump').speed = 3.5; //跳跃动画时间比较长，这里加速播放
-            this.CocosAnim.play('cocos_anim_jump'); //播放跳跃动画
+            this.CocosAnim.getState('cocos_anim_jump').speed = 3.5;
+            this.CocosAnim.play('cocos_anim_jump');
         }
 
-        // if (this.BodyAnim) {
-        //     if (step === 1) {
-        //         this.BodyAnim.play('oneStep');
-        //     } else if (step === 2) {
-        //         this.BodyAnim.play('twoStep');
-        //     }
-        // }
+        // 播放音效，多层判空，杜绝报错
+        if(this.jumpAudio){
+            const audioSource = this.node.getComponent(AudioSource);
+            if(audioSource){
+                audioSource.playOneShot(this.jumpAudio);
+            }
+        }
 
         this._curMoveIndex += step;
     }
@@ -75,7 +77,6 @@ export class PlayerController extends Component {
         if (this.CocosAnim) {
             this.CocosAnim.play('cocos_anim_idle');
         }
-
         this.node.emit('JumpEnd', this._curMoveIndex);
     }
 
@@ -83,16 +84,18 @@ export class PlayerController extends Component {
         if (this._startJump) {
             this._curJumpTime += deltaTime;
             if (this._curJumpTime > this._jumpTime) {
-                // end
                 this.node.setPosition(this._targetPos);
                 this._startJump = false;
                 this.onOnceJumpEnd();
             } else {
-                // tween
-                this.node.getPosition(this._curPos);
-                this._deltaPos.x = this._curJumpSpeed * deltaTime;
-                Vec3.add(this._curPos, this._curPos, this._deltaPos);
-                this.node.setPosition(this._curPos);
+                const t = this._curJumpTime / this._jumpTime;
+                const jumpHeight = 1.2;
+                const yOffset = -4 * jumpHeight * (t - 0.5) * (t - 0.5) + jumpHeight;
+                this.node.setPosition(
+                    this._curPos.x + this._jumpStep * t,
+                    this._curPos.y + yOffset,
+                    this._curPos.z
+                );
             }
         }
     }

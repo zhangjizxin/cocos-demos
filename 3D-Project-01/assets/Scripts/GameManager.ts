@@ -1,4 +1,4 @@
-import { _decorator, Component, Prefab, instantiate, Node, Label, CCInteger, Vec3 } from 'cc';
+import { _decorator, Component, Prefab, instantiate, Node, Label, CCInteger, Vec3, AudioClip, AudioSource } from 'cc';
 import { PlayerController } from "./PlayerController";
 const { ccclass, property } = _decorator;
 
@@ -34,9 +34,23 @@ export class GameManager extends Component {
     @property({type: Label})
     public stepsLabel: Label | null = null!;
 
+    //=====新增：结束弹窗与音效=====
+    @property({type: Node})
+    public EndPanel: Node|null = null;
+    @property({type: Label})
+    public ResultText: Label|null = null;
+    @property({type: AudioClip})
+    public failAudio: AudioClip|null = null;
+    @property({type: AudioClip})
+    public winAudio: AudioClip|null = null;
+
+    private _audioSource: AudioSource|null = null;
+
     start () {
         this.curState = GameState.GS_INIT;
         this.playerCtrl?.node.on('JumpEnd', this.onPlayerJumpEnd, this);
+        this._audioSource = this.getComponent(AudioSource);
+        if(this.EndPanel) this.EndPanel.active = false; //开局隐藏弹窗
     }
 
     init() {
@@ -54,6 +68,8 @@ export class GameManager extends Component {
             // 重置已经移动的步长数据
             this.playerCtrl.reset();
         }
+        // 隐藏结束弹窗
+        if(this.EndPanel) this.EndPanel.active = false;
     }
 
     set curState (value: GameState) {
@@ -126,7 +142,7 @@ export class GameManager extends Component {
         if(block) {
             this.node.addChild(block);
             block?.setScale(count, 1, 1);
-            block?.setPosition(lastPos - (count - 1) * 0.5, -1.5, 0);
+            block?.setPosition(lastPos - (count - 1) * 0.5, -0.3, 0);
         }
     }
     spawnBlockByType(type: BlockType) {
@@ -151,12 +167,20 @@ export class GameManager extends Component {
 
     checkResult(moveIndex: number) {
         if (moveIndex < this.roadLength) {
-            // 跳到了坑上
+            // 跳到了坑上 → 游戏失败
             if (this._road[moveIndex] == BlockType.BT_NONE) {
                 this.curState = GameState.GS_INIT;
+                // 弹出失败弹窗
+                if(this.EndPanel) this.EndPanel.active = true;
+                if(this.ResultText) this.ResultText.string = "游戏失败！";
+                this.playSound(this.failAudio);
             }
-        } else {    // 跳过了最大长度
+        } else {    
+            // 跳到超过最大长度 → 通关胜利
             this.curState = GameState.GS_INIT;
+            if(this.EndPanel) this.EndPanel.active = true;
+            if(this.ResultText) this.ResultText.string = "恭喜通关！";
+            this.playSound(this.winAudio);
         }
     }
 
@@ -169,9 +193,16 @@ export class GameManager extends Component {
         this.checkResult(moveIndex);
     }
 
-    // update (deltaTime: number) {
-    //     // Your update function goes here.
-    // }
+    // 播放音效
+    playSound(clip:AudioClip|null) {
+        if(!clip || !this._audioSource) return;
+        this._audioSource.playOneShot(clip);
+    }
+
+    // 重新开始按钮调用
+    resetGame() {
+        this.curState = GameState.GS_INIT;
+    }
 }
 
 
