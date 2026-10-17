@@ -655,6 +655,10 @@
       "__uuid__": "1696ec21-dc7d-41a7-bf83-4025c571e1bd",
       "__expectedType__": "cc.Prefab"
     },
+    "obstaclePrefab": {
+      "__uuid__": "438d1f48-6207-421d-aa0b-fcad1211b750",
+      "__expectedType__": "cc.Prefab"
+    },
     "roadLength": 50,
     "startMenu": {
       "__id__": 24
@@ -690,6 +694,7 @@
       "__uuid__": "94ad95a0-0c90-4128-90a2-6466559d6c64",
       "__expectedType__": "cc.AudioClip"
     },
+    "coinClip": null,
     "settingPanel": {
       "__id__": 63
     },
@@ -891,7 +896,7 @@
     "_priority": 0,
     "_fov": 45,
     "_fovAxis": 0,
-    "_orthoHeight": 478.6869871043376,
+    "_orthoHeight": 502.2386223862238,
     "_near": 0,
     "_far": 2000,
     "_color": {
