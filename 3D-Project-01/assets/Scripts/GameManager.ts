@@ -1,6 +1,7 @@
 import { _decorator, Component, Prefab, instantiate, Node, Label, CCInteger, Vec3, AudioClip, AudioSource } from 'cc';
 import { PlayerController } from "./PlayerController";
 import { CoinSpin } from "./CoinSpin";
+import { FXManager } from "./FXManager";
 const { ccclass, property } = _decorator;
 
 // 赛道格子类型，坑（BT_NONE）或者实路（BT_STONE）
@@ -64,6 +65,8 @@ export class GameManager extends Component {
     public wallPrfb: Prefab | null = null;          // 障碍物预制体（编辑器拖入）
 
     start () {
+        // 确保特效管理器存在（场景里已手动挂则复用，否则自动创建一个）
+        FXManager.ensure();
         this.curState = GameState.GS_INIT;
         this.playerCtrl?.node.on('JumpEnd', this.onPlayerJumpEnd, this);
         this._audioSource = this.getComponent(AudioSource);
@@ -223,6 +226,8 @@ export class GameManager extends Component {
         this._score += 10;                           // 每枚金币 +10 分
         if (this.scoreLabel) this.scoreLabel.string = '' + this._score;
         this.playSound(this.coinAudio);              // 播放捡币音效
+        // 金币闪光特效：在金币被销毁前，于金币位置喷金色粒子
+        FXManager.instance?.spawnCoin(coin.worldPosition.clone());
         coin.destroy();                              // 回收金币节点
         this._coinMap.delete(index);
     }
@@ -254,6 +259,10 @@ export class GameManager extends Component {
                 if(this.EndPanel) this.EndPanel.active = true;
                 if(this.ResultText) this.ResultText.string = "游戏失败！";
                 this.playSound(this.failAudio);
+                // 失败爆炸特效：在角色当前位置喷红色爆炸粒子
+                if (this.playerCtrl) {
+                    FXManager.instance?.spawnExplosion(this.playerCtrl.node.worldPosition.clone());
+                }
             }
         } else {    
             // 跳到超过最大长度 → 通关胜利

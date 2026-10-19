@@ -1,4 +1,5 @@
 import { _decorator, Component, Vec3, input, Input, EventMouse, EventKeyboard, KeyCode, Animation, SkeletalAnimation, AudioSource, AudioClip, Slider } from 'cc';
+import { FXManager } from "./FXManager";
 const { ccclass, property } = _decorator;
 
 @ccclass("PlayerController")
@@ -120,6 +121,8 @@ export class PlayerController extends Component {
         if (this.CocosAnim) {
             this.CocosAnim.play('cocos_anim_idle');
         }
+        // 角色落地：在脚下喷尘土粒子
+        FXManager.instance?.spawnDust(this.node.worldPosition.clone());
         this.node.emit('JumpEnd', this._curMoveIndex);
     }
 
