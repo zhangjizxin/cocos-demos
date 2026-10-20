@@ -1,4 +1,4 @@
-import { _decorator, Component, Node, Prefab, instantiate, UITransform, Label, view, input, Input, KeyCode, EventKeyboard, director } from 'cc';
+import { _decorator, Component, Node, Prefab, instantiate, UITransform, Label, view, input, Input, KeyCode, EventKeyboard } from 'cc';
 const { ccclass, property } = _decorator;
 
 /**
@@ -10,8 +10,12 @@ const { ccclass, property } = _decorator;
  *   @property scoreLabel   得分文本（把 ScoreLabel 的 Label 组件拖进来）
  *
  * 玩法：金币从屏幕顶部随机下落，玩家接到加分；
- *       漏掉一个金币（掉出屏幕底部）→ 游戏结束，按空格重新开始。
+ *       漏掉一个金币（掉出屏幕底部）→ 游戏结束。
  * 出生/判定边界按当前可见尺寸动态计算，任何设计分辨率都能玩。
+ *
+ * 配合 GameUI：
+ *   - 开局先显示开始界面，须调用 startGame() 才会开始生成金币；
+ *   - 游戏结束时通过 onGameOver 回调通知 UI 弹出结束界面（不再用文字提示+空格重开，空格仍可重开）。
  */
 @ccclass('GameManager')
 export class GameManager extends Component {
@@ -30,10 +34,14 @@ export class GameManager extends Component {
     @property
     public scorePerCoin = 10;                   // 每枚金币得分
 
+    /** 游戏结束回调（由 GameUI 注入，参数为最终得分） */
+    public onGameOver: ((score: number) => void) | null = null;
+
     private _coins: Node[] = [];
     private _score = 0;
     private _spawnTimer = 0;
     private _gameOver = false;
+    private _started = false;                   // 是否已开始（开局显示开始界面，未开始前不生成金币）
 
     // 当前设计分辨率的可见半宽/半高（中心为原点），动态适配横竖屏
     private get _halfW() { return view.getVisibleSize().width / 2; }
@@ -47,8 +55,19 @@ export class GameManager extends Component {
         input.off(Input.EventType.KEY_DOWN, this.onKeyDown, this);
     }
 
+    /** 开始 / 重新开始一局：清空场上残留金币、重置得分，随后开始生成 */
+    public startGame() {
+        for (const c of this._coins) c.destroy();
+        this._coins.length = 0;
+        this._score = 0;
+        this._spawnTimer = 0;
+        this._gameOver = false;
+        this._started = true;
+        if (this.scoreLabel) this.scoreLabel.string = '得分: 0';
+    }
+
     update(deltaTime: number) {
-        if (this._gameOver) return;             // 游戏结束后不再生成/下落
+        if (!this._started || this._gameOver) return;   // 未开始或已结束则不再生成/下落
         this._spawnTimer += deltaTime;
         if (this._spawnTimer >= this.spawnInterval) {
             this._spawnTimer = 0;
@@ -86,7 +105,10 @@ export class GameManager extends Component {
             if (newY < -this._halfH - 60) {
                 remove.push(coin);
                 this._gameOver = true;
-                if (this.scoreLabel) this.scoreLabel.string = '漏接金币，游戏结束！按空格重新开始';
+                this._started = false;
+                if (this.scoreLabel) this.scoreLabel.string = '游戏结束';
+                if (this.onGameOver) this.onGameOver(this._score);
+                break;
             }
         }
         for (const c of remove) {
@@ -105,11 +127,10 @@ export class GameManager extends Component {
             && Math.abs(a.position.y - b.position.y) < (ta.height + tb.height) / 2;
     }
 
-    // 游戏结束后按空格重新加载场景
+    // 游戏结束后按空格重新开始（快捷方式，与 UI 按钮等价）
     private onKeyDown(e: EventKeyboard) {
         if (e.keyCode === KeyCode.SPACE && this._gameOver) {
-            const name = this.node.scene ? this.node.scene.name : '';
-            if (name) director.loadScene(name);
+            this.startGame();
         }
     }
 }
