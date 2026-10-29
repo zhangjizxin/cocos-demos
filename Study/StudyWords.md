@@ -109,3 +109,5 @@ Test/测试
 Test case/测试用例
 
 Render/渲染
+
+touch/触摸
