@@ -1,6 +1,6 @@
 import {
     _decorator, Component, Node, Graphics, Color, UITransform, Vec3, Label, Layers,
-    Button, Input, input, EventTouch, view,
+    Button, Input, input, EventTouch, EventMouse, view,
 } from 'cc';
 import { GridManager } from './GridManager';
 import { GameManager } from './GameManager';
@@ -24,6 +24,7 @@ export class UIManager extends Component {
     private preview: Node | null = null;
     private coolTime = 5;
     private parent: Node = null!;
+    private highlight: Graphics | null = null;
 
     onLoad() {
         UIManager.instance = this;
@@ -37,15 +38,19 @@ export class UIManager extends Component {
     }
 
     onEnable() {
-        input.on(Input.EventType.TOUCH_MOVE, this.onTouchMove, this);
+        input.on(Input.EventType.TOUCH_START, this.onTouchStart, this);
+        input.on(Input.EventType.TOUCH_MOVE, this.onPointerMove, this);
         input.on(Input.EventType.TOUCH_END, this.onTouchEnd, this);
         input.on(Input.EventType.TOUCH_CANCEL, this.onTouchEnd, this);
+        input.on(Input.EventType.MOUSE_MOVE, this.onPointerMove, this);
     }
 
     onDisable() {
-        input.off(Input.EventType.TOUCH_MOVE, this.onTouchMove, this);
+        input.off(Input.EventType.TOUCH_START, this.onTouchStart, this);
+        input.off(Input.EventType.TOUCH_MOVE, this.onPointerMove, this);
         input.off(Input.EventType.TOUCH_END, this.onTouchEnd, this);
         input.off(Input.EventType.TOUCH_CANCEL, this.onTouchEnd, this);
+        input.off(Input.EventType.MOUSE_MOVE, this.onPointerMove, this);
     }
 
     createSunLabel() {
@@ -75,11 +80,14 @@ export class UIManager extends Component {
             g.fillColor = new Color(70, 130, 80);
             g.roundRect(-39, -45, 78, 90, 6);
             g.fill();
-            const label = cardNode.addComponent(Label);
+            cardNode.addComponent(Button);
+            const labelNode = new Node('Label');
+            labelNode.layer = Layers.Enum.UI_2D;
+            const label = labelNode.addComponent(Label);
             label.string = d.label + '\n' + d.cost;
             label.fontSize = 18;
             label.color = new Color(255, 255, 255);
-            cardNode.addComponent(Button);
+            cardNode.addChild(labelNode);
             this.parent.addChild(cardNode);
             cardNode.setPosition(-100 + i * 100, 205);
             this.cards.push({ type: d.type, cost: d.cost, node: cardNode, lastT: -999 });
@@ -98,31 +106,46 @@ export class UIManager extends Component {
         this.startPreview();
     }
 
-    uiToCanvas(e: EventTouch) {
+    uiToCanvas(e: EventTouch | EventMouse) {
         const ui = e.getUILocation();
         const vis = view.getVisibleSize();
         const wp = new Vec3(ui.x - vis.width / 2, ui.y - vis.height / 2, 0);
         return this.canvasUI.convertToNodeSpaceAR(wp);
     }
 
-    onTouchMove(e: EventTouch) {
-        if (this.preview) {
-            const pos = this.uiToCanvas(e);
+    onTouchStart(e: EventTouch) {
+        const pos = this.uiToCanvas(e);
+        if (pos.y > 160 && pos.x > -160 && pos.x < 160) {
+            const i = Math.round((pos.x + 100) / 100);
+            if (i >= 0 && i < this.cards.length) this.selectCard(i);
+        }
+    }
+
+    onPointerMove(e: EventTouch | EventMouse) {
+        if (!this.preview) return;
+        const pos = this.uiToCanvas(e);
+        const rc = GridManager.instance.worldToRC(pos.x, pos.y);
+        if (rc.row >= 0 && rc.col >= 0) {
+            const wp = GridManager.instance.rcToWorld(rc.row, rc.col);
+            this.preview.setPosition(wp.x, wp.y);
+        } else {
             this.preview.setPosition(pos.x, pos.y);
         }
+        this.updateHighlight(rc);
     }
 
     onTouchEnd(e: EventTouch) {
         if (!this.selected) return;
         const pos = this.uiToCanvas(e);
+        if (pos.y > 160 && pos.x > -160 && pos.x < 160) return;
         const rc = GridManager.instance.worldToRC(pos.x, pos.y);
-        if (rc.row >= 0 && rc.col >= 0) {
-            if (GridManager.instance.isFree(rc.row, rc.col) && GameManager.instance.spendSun(this.costOf(this.selected))) {
+        if (rc.row >= 0 && rc.col >= 0 && GridManager.instance.isFree(rc.row, rc.col)) {
+            if (GameManager.instance.spendSun(this.costOf(this.selected))) {
                 GridManager.instance.occupy(rc.row, rc.col);
                 GameRoot.instance.spawnPlant(rc.row, rc.col, this.selected);
             }
-            this.clearSelection();
         }
+        this.clearSelection();
     }
 
     costOf(type: string) {
@@ -133,18 +156,33 @@ export class UIManager extends Component {
         this.clearPreview();
         const p = new Node('Preview');
         p.layer = Layers.Enum.UI_2D;
-        const g = p.addComponent(Graphics);
-        g.fillColor = new Color(255, 255, 255, 120);
-        g.circle(0, 0, 28);
-        g.fill();
+        this.highlight = p.addComponent(Graphics);
         this.parent.addChild(p);
         this.preview = p;
+        this.updateHighlight(GridManager.instance.worldToRC(0, 0));
+    }
+
+    updateHighlight(rc: { row: number; col: number }) {
+        const ok = rc.row >= 0 && rc.col >= 0 &&
+            GridManager.instance.isFree(rc.row, rc.col) &&
+            GameManager.instance.sun >= this.costOf(this.selected);
+        const g = this.highlight;
+        if (!g) return;
+        g.clear();
+        g.lineWidth = 3;
+        g.strokeColor = ok ? new Color(90, 230, 90) : new Color(230, 90, 90);
+        g.rect(-45, -40, 90, 80);
+        g.stroke();
+        g.fillColor = new Color(255, 255, 255, 90);
+        g.circle(0, 0, 22);
+        g.fill();
     }
 
     clearPreview() {
         if (this.preview) {
             this.preview.destroy();
             this.preview = null;
+            this.highlight = null;
         }
     }
 

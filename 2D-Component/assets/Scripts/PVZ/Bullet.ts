@@ -15,13 +15,16 @@ export class Bullet extends Component {
         this.node.setPosition(x, y);
         const g = this.getComponent(Graphics) || this.addComponent(Graphics);
         g.clear();
-        g.fillColor = new Color(80, 220, 90);
+        g.fillColor = new Color(90, 220, 90);
         g.circle(0, 0, 9);
         g.fill();
         g.strokeColor = new Color(40, 120, 50);
-        g.lineWidth = 2;
+        g.lineWidth = 1.5;
         g.circle(0, 0, 9);
         g.stroke();
+        g.fillColor = new Color(190, 255, 190);
+        g.circle(-3, 3, 3);
+        g.fill();
     }
 
     update(dt: number) {

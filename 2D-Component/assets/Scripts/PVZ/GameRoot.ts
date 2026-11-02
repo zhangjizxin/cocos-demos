@@ -88,20 +88,25 @@ export class GameRoot extends Component {
         lawn.layer = Layers.Enum.UI_2D;
         this.node.addChild(lawn);
         const g = lawn.addComponent(Graphics);
-        g.fillColor = new Color(120, 170, 80);
-        g.rect(-405, -240, 810, 400);
-        g.fill();
-        g.strokeColor = new Color(190, 220, 160);
-        g.lineWidth = 1;
-        for (let i = 0; i <= 9; i++) {
-            const x = -405 + i * 90;
-            g.moveTo(x, -240);
-            g.lineTo(x, 160);
+        const cellW = 90, cellH = 80, left = -405, top = 160, cols = 9, rows = 5;
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                g.fillColor = (r + c) % 2 === 0 ? new Color(124, 176, 88) : new Color(112, 164, 80);
+                g.rect(left + c * cellW, top - cellH * (r + 1), cellW, cellH);
+                g.fill();
+            }
         }
-        for (let i = 0; i <= 5; i++) {
-            const y = -240 + i * 80;
-            g.moveTo(-405, y);
-            g.lineTo(405, y);
+        g.strokeColor = new Color(96, 140, 70);
+        g.lineWidth = 1;
+        for (let i = 0; i <= cols; i++) {
+            const x = left + i * cellW;
+            g.moveTo(x, top - rows * cellH);
+            g.lineTo(x, top);
+        }
+        for (let i = 0; i <= rows; i++) {
+            const y = top - i * cellH;
+            g.moveTo(left, y);
+            g.lineTo(left + cols * cellW, y);
         }
         g.stroke();
     }

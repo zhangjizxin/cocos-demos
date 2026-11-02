@@ -25,25 +25,55 @@ export class Plant extends Component {
         const g = this.getComponent(Graphics) || this.addComponent(Graphics);
         g.clear();
         if (type === 'sunflower') {
-            g.fillColor = new Color(255, 200, 0);
-            g.circle(0, 0, 26);
+            for (let i = 0; i < 10; i++) {
+                const a = (i / 10) * Math.PI * 2;
+                g.fillColor = new Color(255, 210, 60);
+                g.ellipse(Math.cos(a) * 15, Math.sin(a) * 15, 7, 13);
+                g.fill();
+            }
+            g.fillColor = new Color(150, 90, 30);
+            g.circle(0, 0, 10);
             g.fill();
-            g.fillColor = new Color(140, 80, 0);
-            g.circle(0, 0, 9);
+            g.fillColor = new Color(60, 150, 60);
+            g.rect(-4, -32, 8, 26);
+            g.fill();
+            g.fillColor = new Color(70, 170, 70);
+            g.ellipse(-16, -24, 11, 5);
+            g.fill();
+            g.ellipse(16, -24, 11, 5);
             g.fill();
         } else if (type === 'shooter') {
-            g.fillColor = new Color(40, 190, 70);
-            g.roundRect(-24, -12, 40, 24, 6);
+            g.fillColor = new Color(60, 150, 60);
+            g.rect(-4, -30, 8, 26);
             g.fill();
-            g.fillColor = new Color(20, 120, 40);
-            g.circle(24, 0, 15);
+            g.fillColor = new Color(70, 170, 70);
+            g.ellipse(-14, -22, 10, 5);
+            g.fill();
+            g.fillColor = new Color(50, 170, 60);
+            g.ellipse(0, -4, 16, 18);
+            g.fill();
+            g.fillColor = new Color(90, 200, 70);
+            g.circle(8, 9, 12);
+            g.fill();
+            g.fillColor = new Color(60, 130, 60);
+            g.circle(5, 12, 6);
+            g.fill();
+            g.fillColor = new Color(150, 150, 140);
+            g.rect(16, 3, 15, 7);
+            g.fill();
+            g.fillColor = new Color(60, 60, 60);
+            g.circle(30, 6.5, 3);
             g.fill();
         } else {
-            g.fillColor = new Color(160, 120, 50);
-            g.circle(0, 0, 32);
+            g.fillColor = new Color(150, 110, 60);
+            g.ellipse(0, -2, 26, 28);
             g.fill();
-            g.fillColor = new Color(110, 75, 30);
-            g.circle(0, 0, 13);
+            g.strokeColor = new Color(110, 78, 40);
+            g.lineWidth = 2;
+            g.ellipse(0, -2, 26, 28);
+            g.stroke();
+            g.fillColor = new Color(190, 150, 90);
+            g.ellipse(-10, 8, 8, 10);
             g.fill();
         }
     }
