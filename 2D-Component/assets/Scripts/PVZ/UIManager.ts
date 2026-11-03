@@ -54,12 +54,16 @@ export class UIManager extends Component {
     }
 
     createSunLabel() {
-        const n = new Node('SunLabel');
-        n.layer = Layers.Enum.UI_2D;
-        const label = n.addComponent(Label);
+        let n = this.parent.getChildByName('SunLabel');
+        if (!n) {
+            n = new Node('SunLabel');
+            n.layer = Layers.Enum.UI_2D;
+            this.parent.addChild(n);
+        }
+        let label = n.getComponent(Label);
+        if (!label) label = n.addComponent(Label);
         label.fontSize = 28;
         label.color = new Color(255, 255, 255);
-        this.parent.addChild(n);
         n.setPosition(0, 250);
         GameManager.instance.sunLabel = label;
     }
@@ -72,23 +76,17 @@ export class UIManager extends Component {
         ];
         for (let i = 0; i < defs.length; i++) {
             const d = defs[i];
-            const cardNode = new Node(d.label);
-            cardNode.layer = Layers.Enum.UI_2D;
-            const ui = cardNode.addComponent(UITransform);
-            ui.setContentSize(78, 90);
-            const g = cardNode.addComponent(Graphics);
-            g.fillColor = new Color(70, 130, 80);
-            g.roundRect(-39, -45, 78, 90, 6);
-            g.fill();
-            cardNode.addComponent(Button);
-            const labelNode = new Node('Label');
-            labelNode.layer = Layers.Enum.UI_2D;
-            const label = labelNode.addComponent(Label);
-            label.string = d.label + '\n' + d.cost;
-            label.fontSize = 18;
-            label.color = new Color(255, 255, 255);
-            cardNode.addChild(labelNode);
-            this.parent.addChild(cardNode);
+            let cardNode = this.parent.getChildByName(d.label);
+            if (!cardNode) {
+                cardNode = new Node(d.label);
+                cardNode.layer = Layers.Enum.UI_2D;
+                this.parent.addChild(cardNode);
+            }
+            if (!cardNode.getComponent(UITransform)) {
+                const ui = cardNode.addComponent(UITransform);
+                ui.setContentSize(78, 90);
+            }
+            if (!cardNode.getComponent(Button)) cardNode.addComponent(Button);
             cardNode.setPosition(-100 + i * 100, 205);
             this.cards.push({ type: d.type, cost: d.cost, node: cardNode, lastT: -999 });
             const idx = i;

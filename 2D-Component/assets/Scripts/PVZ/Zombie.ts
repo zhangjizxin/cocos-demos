@@ -1,4 +1,4 @@
-import { _decorator, Component, Graphics, Color } from 'cc';
+import { _decorator, Component } from 'cc';
 import { GameRoot } from './GameRoot';
 import { ObjectPool } from './ObjectPool';
 
@@ -16,32 +16,6 @@ export class Zombie extends Component {
     setup(row: number) {
         this.row = row;
         this.hp = 150;
-        const g = this.getComponent(Graphics) || this.addComponent(Graphics);
-        g.clear();
-        g.fillColor = new Color(70, 110, 60);
-        g.roundRect(-11, -36, 9, 18, 3);
-        g.fill();
-        g.roundRect(2, -36, 9, 18, 3);
-        g.fill();
-        g.fillColor = new Color(110, 150, 85);
-        g.roundRect(-16, -18, 32, 24, 6);
-        g.fill();
-        g.fillColor = new Color(90, 130, 70);
-        g.roundRect(-22, 0, 12, 6, 2);
-        g.fill();
-        g.fillColor = new Color(120, 160, 90);
-        g.circle(0, 10, 14);
-        g.fill();
-        g.fillColor = new Color(255, 255, 255);
-        g.circle(-5, 13, 4.5);
-        g.fill();
-        g.circle(5, 13, 4.5);
-        g.fill();
-        g.fillColor = new Color(30, 30, 30);
-        g.circle(-4.5, 13, 2.2);
-        g.fill();
-        g.circle(5.5, 13, 2.2);
-        g.fill();
     }
 
     update(dt: number) {

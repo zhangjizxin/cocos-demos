@@ -1,4 +1,4 @@
-import { _decorator, Component, Graphics, Color, UITransform, Vec3, tween, Button } from 'cc';
+import { _decorator, Component, Vec3, tween, Button } from 'cc';
 import { GameRoot } from './GameRoot';
 
 const { ccclass } = _decorator;
@@ -12,19 +12,6 @@ export class Sun extends Component {
         this.value = value;
         this.collected = false;
         this.node.setPosition(x, fallFrom);
-        const ui = this.getComponent(UITransform) || this.addComponent(UITransform);
-        ui.setContentSize(56, 56);
-        const g = this.getComponent(Graphics) || this.addComponent(Graphics);
-        g.clear();
-        g.fillColor = new Color(255, 230, 90, 80);
-        g.circle(0, 0, 30);
-        g.fill();
-        g.fillColor = new Color(255, 220, 60);
-        g.circle(0, 0, 22);
-        g.fill();
-        g.fillColor = new Color(255, 245, 160);
-        g.circle(-6, 6, 7);
-        g.fill();
         const btn = this.getComponent(Button) || this.addComponent(Button);
         btn.node.off(Button.EventType.CLICK, this.collect, this);
         btn.node.on(Button.EventType.CLICK, this.collect, this);

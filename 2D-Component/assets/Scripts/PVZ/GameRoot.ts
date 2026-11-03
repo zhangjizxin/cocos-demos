@@ -27,6 +27,7 @@ export class GameRoot extends Component {
     ui: UIManager = null!;
     private canvasUI: UITransform = null!;
     private plantTemplate: Node = null!;
+    private plantTemplates: { [key: string]: Node } = {};
     private zombieTemplate: Node = null!;
     private bulletTemplate: Node = null!;
     private sunTemplate: Node = null!;
@@ -36,83 +37,32 @@ export class GameRoot extends Component {
     onLoad() {
         GameRoot.instance = this;
         this.canvasUI = this.node.getComponent(UITransform)!;
-        this.grid = this.node.getComponent(GridManager) || this.node.addComponent(GridManager);
-        this.pool = this.node.getComponent(ObjectPool) || this.node.addComponent(ObjectPool);
+        this.grid = this.node.getComponent(GridManager)!;
+        this.pool = this.node.getComponent(ObjectPool)!;
 
-        this.drawLawn();
-        this.plantLayer = this.makeLayer('PlantLayer');
-        this.zombieLayer = this.makeLayer('ZombieLayer');
-        this.bulletLayer = this.makeLayer('BulletLayer');
-        this.sunLayer = this.makeLayer('SunLayer');
+        this.plantLayer = this.node.getChildByName('PlantLayer')!;
+        this.zombieLayer = this.node.getChildByName('ZombieLayer')!;
+        this.bulletLayer = this.node.getChildByName('BulletLayer')!;
+        this.sunLayer = this.node.getChildByName('SunLayer')!;
 
-        this.gm = this.makeManager('GameManager', GameManager).getComponent(GameManager)!;
-        this.plantTemplate = this.buildTemplate('PlantTemplate', 70, 70, Plant);
-        this.zombieTemplate = this.buildTemplate('ZombieTemplate', 60, 80, Zombie);
-        this.bulletTemplate = this.buildTemplate('BulletTemplate', 30, 30, Bullet);
-        this.sunTemplate = this.buildTemplate('SunTemplate', 56, 56, Sun);
+        this.gm = this.node.getChildByName('GameManager')!.getComponent(GameManager)!;
+        this.plantTemplates['sunflower'] = this.node.getChildByName('SunflowerTemplate')!;
+        this.plantTemplates['shooter'] = this.node.getChildByName('ShooterTemplate')!;
+        this.plantTemplates['wallnut'] = this.node.getChildByName('WallnutTemplate')!;
+        this.zombieTemplate = this.node.getChildByName('ZombieTemplate')!;
+        this.bulletTemplate = this.node.getChildByName('BulletTemplate')!;
+        this.sunTemplate = this.node.getChildByName('SunTemplate')!;
 
-        this.makeManager('UIManager', UIManager);
-        this.ui = UIManager.instance;
+        this.ui = this.node.getChildByName('UIManager')!.getComponent(UIManager)!;
+    }
+
+    start() {
         this.ui.setup(this.node);
-        this.makeManager('LevelManager', LevelManager);
-        this.makeManager('SunSpawner', SunSpawner);
-    }
-
-    makeManager(name: string, compType: any): Node {
-        const n = new Node(name);
-        n.layer = Layers.Enum.UI_2D;
-        n.addComponent(compType);
-        this.node.addChild(n);
-        return n;
-    }
-
-    makeLayer(name: string) {
-        const n = new Node(name);
-        n.layer = Layers.Enum.UI_2D;
-        this.node.addChild(n);
-        return n;
-    }
-
-    buildTemplate(name: string, w: number, h: number, compType: any) {
-        const n = new Node(name);
-        const ui = n.addComponent(UITransform);
-        ui.setContentSize(w, h);
-        n.addComponent(compType);
-        n.active = false;
-        this.node.addChild(n);
-        return n;
-    }
-
-    drawLawn() {
-        const lawn = new Node('Lawn');
-        lawn.layer = Layers.Enum.UI_2D;
-        this.node.addChild(lawn);
-        const g = lawn.addComponent(Graphics);
-        const cellW = 90, cellH = 80, left = -405, top = 160, cols = 9, rows = 5;
-        for (let r = 0; r < rows; r++) {
-            for (let c = 0; c < cols; c++) {
-                g.fillColor = (r + c) % 2 === 0 ? new Color(124, 176, 88) : new Color(112, 164, 80);
-                g.rect(left + c * cellW, top - cellH * (r + 1), cellW, cellH);
-                g.fill();
-            }
-        }
-        g.strokeColor = new Color(96, 140, 70);
-        g.lineWidth = 1;
-        for (let i = 0; i <= cols; i++) {
-            const x = left + i * cellW;
-            g.moveTo(x, top - rows * cellH);
-            g.lineTo(x, top);
-        }
-        for (let i = 0; i <= rows; i++) {
-            const y = top - i * cellH;
-            g.moveTo(left, y);
-            g.lineTo(left + cols * cellW, y);
-        }
-        g.stroke();
     }
 
     spawnPlant(row: number, col: number, type: string) {
-        const n = instantiate(this.plantTemplate);
+        const template = this.plantTemplates[type] || this.plantTemplates['sunflower'];
+        const n = instantiate(template);
         this.plantLayer.addChild(n);
         n.active = true;
         const wp = this.grid.rcToWorld(row, col);
